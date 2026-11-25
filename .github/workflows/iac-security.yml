@@ -1,0 +1,71 @@
+name: Seguridad IaC
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  iac:
+    name: Escaneo IaC
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Descargar codigo
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Preparar Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12.3"
+
+      - name: Instalar versiones verificadas
+        id: tools
+        run: python -m pip install -r requirements-iac.txt
+
+      - name: Registrar entorno
+        run: |
+          mkdir -p reportes/pipeline
+          python --version > reportes/pipeline/entorno.txt
+          python -m pip freeze >> reportes/pipeline/entorno.txt
+
+      # Solo el reporte permite fallas; los gates siguientes bloquean el PR.
+      # Un unico recorrido evita sobrescribir resultados entre directorios.
+      - name: Generar reporte SARIF
+        run: |
+          checkov -d . \
+            --framework terraform ansible dockerfile secrets \
+            --skip-path '(^|/)(\.git|\.venv|reportes|docs)(/|$)' \
+            --external-checks-dir politicas \
+            -o sarif --output-file-path reportes/pipeline --soft-fail
+
+      - name: Publicar SARIF en Code Scanning
+        if: ${{ !cancelled() && hashFiles('reportes/pipeline/results_sarif.sarif') != '' }}
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: reportes/pipeline/results_sarif.sarif
+          category: checkov-iac
+
+      - name: Gate Checkov
+        if: ${{ !cancelled() && steps.tools.outcome == 'success' }}
+        run: |
+          checkov -d . \
+            --framework terraform ansible dockerfile secrets \
+            --skip-path '(^|/)(\.git|\.venv|reportes|docs)(/|$)' \
+            --external-checks-dir politicas --compact --quiet
+
+      - name: Validar sintaxis Ansible
+        if: ${{ !cancelled() && steps.tools.outcome == 'success' }}
+        run: ansible-playbook -i ansible/inventory.ini ansible/site.yml --syntax-check
+
+      - name: Gate ansible-lint production
+        if: ${{ !cancelled() && steps.tools.outcome == 'success' }}
+        run: ansible-lint --profile production ansible/site.yml
