@@ -14,7 +14,8 @@ permissions:
 jobs:
   iac:
     name: Escaneo IaC
-    runs-on: ubuntu-latest
+    # Python 3.12.3 esta disponible para Ubuntu 24.04, no para 26.04.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - name: Descargar codigo
