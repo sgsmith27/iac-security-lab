@@ -1,5 +1,4 @@
-# Configuracion deliberadamente insegura para analisis estatico.
-# No ejecutar terraform apply. La credencial es ficticia.
+# Laboratorio de analisis estatico. No ejecutar terraform apply.
 provider "aws" {
   region = "us-east-1"
 }
@@ -10,21 +9,21 @@ resource "aws_s3_bucket" "datos" {
 
 resource "aws_s3_bucket_public_access_block" "datos" {
   bucket                  = aws_s3_bucket.datos.id
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
 resource "aws_security_group" "web" {
   name        = "web"
   description = "Acceso al servidor web"
   ingress {
-    description = "SSH desde cualquier lugar"
+    description = "SSH desde la red de administracion de ejemplo"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["10.10.0.0/24"]
   }
 }
 
@@ -34,8 +33,11 @@ resource "aws_db_instance" "db" {
   instance_class      = "db.t3.micro"
   allocated_storage   = 20
   username            = "admin"
-  password            = "SuperSecreta123"
-  publicly_accessible = true
-  storage_encrypted   = false
-  skip_final_snapshot = true
+  manage_master_user_password = true
+  publicly_accessible        = false
+  storage_encrypted          = true
+  deletion_protection        = true
+  backup_retention_period    = 7
+  skip_final_snapshot        = false
+  final_snapshot_identifier  = "demo-db-final"
 }
