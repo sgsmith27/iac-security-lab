@@ -1,27 +1,34 @@
 ---
-# Ejemplo inseguro para analisis; no ejecutar contra servidores.
-- hosts: servidores
-  become: yes
+# Solo analisis estatico. Las URLs son de ejemplo.
+- name: Configurar aplicacion del laboratorio
+  hosts: servidores
+  become: true
   tasks:
-    - name: instalar nginx
-      apt: name=nginx state=latest
+    - name: Instalar nginx
+      ansible.builtin.apt:
+        name: nginx
+        state: present
 
-    - name: descargar script de configuracion
-      get_url:
+    - name: Descargar configuracion verificada
+      ansible.builtin.get_url:
         url: https://example.com/config.sh
         dest: /tmp/config.sh
-        validate_certs: no
+        validate_certs: true
+        mode: "0600"
+        checksum: "sha256:{{ configuracion_sha256 }}"
+      # Un uso real exige un hash obtenido de una fuente confiable.
+      # No se ejecuta el archivo remoto descargado.
 
-    - name: ejecutar script
-      shell: bash /tmp/config.sh
-
-    - name: llamar API interna
-      uri:
+    - name: Consultar API interna
+      ansible.builtin.uri:
         url: https://api.interna.local/registro
-        validate_certs: false
+        validate_certs: true
+        method: GET
 
-    - name: archivo de configuracion
-      copy:
+    - name: Instalar archivo de configuracion
+      ansible.builtin.copy:
         src: app.conf
         dest: /etc/app.conf
-        mode: 0777
+        owner: root
+        group: root
+        mode: "0644"
