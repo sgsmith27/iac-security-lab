@@ -45,31 +45,5 @@ resource "aws_s3_bucket_lifecycle_configuration" "datos" {
   }
 }
 
-resource "aws_s3_bucket_replication_configuration" "datos" {
-  bucket     = aws_s3_bucket.datos.id
-  role       = var.replication_role_arn
-  depends_on = [aws_s3_bucket_versioning.datos]
-  rule {
-    id       = "replica-otra-region"
-    priority = 1
-    status   = "Enabled"
-    filter {
-      prefix = ""
-    }
-    delete_marker_replication {
-      status = "Disabled"
-    }
-    source_selection_criteria {
-      sse_kms_encrypted_objects {
-        status = "Enabled"
-      }
-    }
-    destination {
-      bucket        = var.replica_bucket_arn
-      storage_class = "STANDARD"
-      encryption_configuration {
-        replica_kms_key_id = var.replica_kms_key_arn
-      }
-    }
-  }
-}
+# Replicacion entre regiones omitida mediante la excepcion RIESGO-001.
+# La supresion se declara exclusivamente en aws_s3_bucket.datos (main.tf).

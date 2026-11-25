@@ -4,6 +4,7 @@ provider "aws" {
 }
 
 resource "aws_s3_bucket" "datos" {
+  # checkov:skip=CKV_AWS_144: RIESGO-001 - Solo laboratorio estatico sin despliegue ni datos reales; replica regional omitida; aprobado por Sergio Geovany Garcia Smith el 2026-11-25; vence 2027-01-31. Ver docs/RIESGO-001.md.
   bucket = "galileo-demo-datos"
 }
 
