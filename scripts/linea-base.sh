@@ -3,7 +3,12 @@
 set -u
 set -o pipefail
 cd "$(dirname "$0")/.."
-out="reportes/linea-base"
+out="${1:-reportes/linea-base}"
+# Evitar sobreescribir una evidencia previa por accidente.
+if [ -e "$out/entorno.txt" ]; then
+  printf 'El directorio ya contiene evidencia: %s. Usa otro destino.\n' "$out" >&2
+  exit 2
+fi
 mkdir -p "$out"
 for tool in checkov ansible ansible-playbook ansible-lint; do
   if ! command -v "$tool" >/dev/null 2>&1; then
