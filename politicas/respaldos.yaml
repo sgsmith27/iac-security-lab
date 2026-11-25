@@ -1,0 +1,11 @@
+metadata:
+  id: "CKV2_CURSO_1"
+  name: "Las bases de datos deben guardar respaldos al menos 7 dias"
+  category: "BACKUP_AND_RECOVERY"
+definition:
+  cond_type: "attribute"
+  resource_types:
+    - "aws_db_instance"
+  attribute: "backup_retention_period"
+  operator: "greater_than_or_equal"
+  value: 7

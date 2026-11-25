@@ -1,0 +1,13 @@
+.venv/
+.ansible/
+__pycache__/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+.env
+*.mp4
+reportes/**/*.sarif
+reportes/**/*.json
+reportes/**/*.txt
+!reportes/**/README.md

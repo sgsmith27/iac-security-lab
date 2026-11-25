@@ -1,0 +1,27 @@
+---
+# Ejemplo inseguro para analisis; no ejecutar contra servidores.
+- hosts: servidores
+  become: yes
+  tasks:
+    - name: instalar nginx
+      apt: name=nginx state=latest
+
+    - name: descargar script de configuracion
+      get_url:
+        url: https://example.com/config.sh
+        dest: /tmp/config.sh
+        validate_certs: no
+
+    - name: ejecutar script
+      shell: bash /tmp/config.sh
+
+    - name: llamar API interna
+      uri:
+        url: https://api.interna.local/registro
+        validate_certs: false
+
+    - name: archivo de configuracion
+      copy:
+        src: app.conf
+        dest: /etc/app.conf
+        mode: 0777
