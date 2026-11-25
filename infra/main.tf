@@ -16,12 +16,14 @@ resource "aws_s3_bucket_public_access_block" "datos" {
 }
 
 resource "aws_security_group" "web" {
-  name        = "web"
-  description = "Acceso al servidor web"
+  # Se conserva la direccion Terraform para comparar con la linea base.
+  name        = "demo-db"
+  description = "PostgreSQL desde la red privada de la aplicacion"
+  vpc_id      = var.vpc_id
   ingress {
-    description = "SSH desde la red de administracion de ejemplo"
-    from_port   = 22
-    to_port     = 22
+    description = "PostgreSQL desde la red privada de ejemplo"
+    from_port   = 5432
+    to_port     = 5432
     protocol    = "tcp"
     cidr_blocks = ["10.10.0.0/24"]
   }
@@ -30,6 +32,7 @@ resource "aws_security_group" "web" {
 resource "aws_db_instance" "db" {
   identifier          = "demo-db"
   engine              = "postgres"
+  engine_version      = "16"
   instance_class      = "db.t3.micro"
   allocated_storage   = 20
   username            = "admin"
@@ -40,4 +43,17 @@ resource "aws_db_instance" "db" {
   backup_retention_period    = 7
   skip_final_snapshot        = false
   final_snapshot_identifier  = "demo-db-final"
+  vpc_security_group_ids     = [aws_security_group.web.id]
+  db_subnet_group_name       = var.db_subnet_group_name
+  kms_key_id                 = var.kms_key_arn
+  multi_az                   = true
+  iam_database_authentication_enabled = true
+  auto_minor_version_upgrade = true
+  copy_tags_to_snapshot      = true
+  enabled_cloudwatch_logs_exports = ["postgresql", "upgrade"]
+  performance_insights_enabled = true
+  performance_insights_kms_key_id = var.kms_key_arn
+  monitoring_interval        = 60
+  monitoring_role_arn        = var.rds_monitoring_role_arn
+  parameter_group_name       = aws_db_parameter_group.db.name
 }
